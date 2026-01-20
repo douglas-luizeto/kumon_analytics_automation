@@ -202,10 +202,10 @@ def migrate_fct_status_report(
 
 if __name__ == "__main__":
     gc = get_gspread_client(GOOGLE_APPLICATION_CREDENTIALS)
-    sh = gc.open_by_key(SOURCE_ID)
-
+    sh_source = gc.open_by_key(SOURCE_ID)
+    sh_destination = gc.open_by_key(DESTINATION_ID)
     try:
-        worksheet = sh.worksheet("data_cleaned")
+        worksheet = sh_source.worksheet("data_cleaned")
         print(f"data-cleaned worksheet opened.")
     except gspread.exceptions.WorksheetNotFound:
         print("Worksheet not found.")
@@ -218,6 +218,6 @@ if __name__ == "__main__":
     )
     df_raw["subject"] = df_raw["subject"].astype(str).apply(lambda s: s.strip().upper())
 
-    df_students = migrate_dim_students(sh, df_raw)
-    df_subjects = migrate_rel_students_subject(sh, df_raw, df_students)
-    migrate_fct_status_report(sh, df_raw, df_students, df_subjects)
+    df_students = migrate_dim_students(sh_destination, df_raw)
+    df_subjects = migrate_rel_students_subject(sh_destination, df_raw, df_students)
+    migrate_fct_status_report(sh_destination, df_raw, df_students, df_subjects)
