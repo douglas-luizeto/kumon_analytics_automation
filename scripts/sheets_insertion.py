@@ -43,6 +43,7 @@ def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.Da
         for id in df_students["kumon_id"]
     ]
 
+    # Metadata
     ingested_at = pd.Timestamp.now()
     df_students["ingested_at"] = [ingested_at for _ in range(len(df_students))]
     cols = [
@@ -91,10 +92,34 @@ def migrate_rel_students_subject(
         on="kumon_id",
         validate="many_to_one",
     ).drop_duplicates()
+
+    # Create subject_id surrogate key
     df_subjects["subject_id"] = [str(uuid.uuid4()) for _ in range(len(df_subjects))]
+
+    # Create status column that states whether a student is active in subject considering the last report_date
+    last_date = df_raw["report_date"].max()
+
+    # Select active students at last report_date
+    df_active = df_raw[df_raw["report_date"] == last_date][
+        ["kumon_id", "subject"]
+    ].drop_duplicates()
+    df_active["status"] = "active"
+
+    df_subjects = df_subjects.merge(df_active, how="left", on=["kumon_id", "subject"])
+    df_subjects["status"] = df_subjects["status"].fillna("inactive")
+
+    # Metadata
     ingested_at = pd.Timestamp.now()
     df_subjects["ingested_at"] = [ingested_at for _ in range(len(df_subjects))]
-    cols = ["subject_id", "student_id", "subject", "enroll_date_sub", "ingested_at"]
+
+    cols = [
+        "subject_id",
+        "student_id",
+        "subject",
+        "enroll_date_sub",
+        "status",
+        "ingested_at",
+    ]
     df_subjects = df_subjects[cols]
 
     try:
@@ -157,7 +182,11 @@ def migrate_fct_status_report(
         on=["student_id", "subject"],
         validate="many_to_one",
     )
+
+    # Create fact_id primary key
     df_fact["fact_id"] = [str(uuid.uuid4()) for _ in range(len(df_fact))]
+
+    # Metadata
     ingested_at = pd.Timestamp.now()
     df_fact["ingested_at"] = [ingested_at for _ in range(len(df_fact))]
     cols = [
