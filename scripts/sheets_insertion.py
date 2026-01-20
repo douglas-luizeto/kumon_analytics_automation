@@ -37,7 +37,7 @@ def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.Da
     df_students["status"] = [
         (
             "active"
-            if (id == df_raw["kumon_id"].loc["report_date" == last_date]).any()
+            if (id == df_raw["kumon_id"].loc[df_raw["report_date"] == last_date]).any()
             else "inactive"
         )
         for id in df_students["kumon_id"]
