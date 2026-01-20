@@ -23,7 +23,7 @@ def get_gspread_client(json_key_path: str) -> gspread.Client:
     return gspread.authorize(creds)
 
 
-def migrate_dim_students(gc: gspread.Client, df_raw: pd.DataFrame) -> pd.DataFrame:
+def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.DataFrame:
     df_students = (
         df_raw[["kumon_id", "name", "birth_date", "enroll_date", "gender"]]
         .drop_duplicates(subset="kumon_id")
@@ -32,8 +32,6 @@ def migrate_dim_students(gc: gspread.Client, df_raw: pd.DataFrame) -> pd.DataFra
     df_students["student_id"] = [str(uuid.uuid4()) for _ in range(len(df_students))]
     cols = ["student_id", "kumon_id", "name", "birth_date", "enroll_date", "gender"]
     df_students = df_students[cols]
-
-    sh = gc.open_by_key(DESTINATION_ID)
 
     try:
         worksheet = sh.worksheet("dim_students")
@@ -60,7 +58,7 @@ def migrate_dim_students(gc: gspread.Client, df_raw: pd.DataFrame) -> pd.DataFra
 
 
 def migrate_rel_students_subject(
-    gc: gspread.Client, df_raw: pd.DataFrame, df_students: pd.DataFrame
+    sh: gspread.Spreadsheet, df_raw: pd.DataFrame, df_students: pd.DataFrame
 ) -> pd.DataFrame:
     df_subjects = df_raw[["kumon_id", "subject", "enroll_date_sub"]]
     df_subjects = df_subjects.merge(
@@ -72,8 +70,6 @@ def migrate_rel_students_subject(
     df_subjects["subject_id"] = [str(uuid.uuid4()) for _ in range(len(df_subjects))]
     cols = ["subject_id", "student_id", "subject", "enroll_date_sub"]
     df_subjects = df_subjects[cols]
-
-    sh = gc.open_by_key(DESTINATION_ID)
 
     try:
         worksheet = sh.worksheet("rel_students_subject")
@@ -102,7 +98,7 @@ def migrate_rel_students_subject(
 
 
 def migrate_fct_status_report(
-    gc: gspread.Client,
+    sh: gspread.Spreadsheet,
     df_raw: pd.DataFrame,
     df_students: pd.DataFrame,
     df_subjects: pd.DataFrame,
@@ -152,8 +148,6 @@ def migrate_fct_status_report(
     ]
     df_fact = df_fact[cols]
 
-    sh = gc.open_by_key(DESTINATION_ID)
-
     try:
         worksheet = sh.worksheet("fct_status_report")
         print("fct_status_report worksheet opened.")
@@ -179,7 +173,6 @@ def migrate_fct_status_report(
 
 if __name__ == "__main__":
     gc = get_gspread_client(GOOGLE_APPLICATION_CREDENTIALS)
-
     sh = gc.open_by_key(SOURCE_ID)
 
     try:
@@ -189,6 +182,6 @@ if __name__ == "__main__":
         print("Worksheet not found.")
 
     df_raw = get_as_dataframe(worksheet, evaluate_formulas=True)
-    df_students = migrate_dim_students(gc, df_raw)
-    df_subjects = migrate_rel_students_subject(gc, df_raw, df_students)
-    migrate_fct_status_report(gc, df_raw, df_students, df_subjects)
+    df_students = migrate_dim_students(sh, df_raw)
+    df_subjects = migrate_rel_students_subject(sh, df_raw, df_students)
+    migrate_fct_status_report(sh, df_raw, df_students, df_subjects)
