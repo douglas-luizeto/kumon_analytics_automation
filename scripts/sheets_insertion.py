@@ -30,7 +30,17 @@ def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.Da
         .copy()
     )
     df_students["student_id"] = [str(uuid.uuid4()) for _ in range(len(df_students))]
-    cols = ["student_id", "kumon_id", "name", "birth_date", "enroll_date", "gender"]
+    ingested_at = pd.Timestamp.now()
+    df_students["ingested_at"] = [ingested_at for _ in range(len(df_students))]
+    cols = [
+        "student_id",
+        "kumon_id",
+        "name",
+        "birth_date",
+        "enroll_date",
+        "gender",
+        "ingested_at",
+    ]
     df_students = df_students[cols]
 
     try:
@@ -68,7 +78,9 @@ def migrate_rel_students_subject(
         validate="many_to_one",
     ).drop_duplicates()
     df_subjects["subject_id"] = [str(uuid.uuid4()) for _ in range(len(df_subjects))]
-    cols = ["subject_id", "student_id", "subject", "enroll_date_sub"]
+    ingested_at = pd.Timestamp.now()
+    df_subjects["ingested_at"] = [ingested_at for _ in range(len(df_subjects))]
+    cols = ["subject_id", "student_id", "subject", "enroll_date_sub", "ingested_at"]
     df_subjects = df_subjects[cols]
 
     try:
@@ -131,6 +143,8 @@ def migrate_fct_status_report(
         validate="many_to_one",
     )
     df_fact["fact_id"] = [str(uuid.uuid4()) for _ in range(len(df_fact))]
+    ingested_at = pd.Timestamp.now()
+    df_fact["ingested_at"] = [ingested_at for _ in range(len(df_fact))]
     cols = [
         "fact_id",
         "subject_id",
@@ -145,6 +159,7 @@ def migrate_fct_status_report(
         "total_sheets",
         "advanced",
         "status",
+        "ingested_at",
     ]
     df_fact = df_fact[cols]
 
@@ -182,6 +197,13 @@ if __name__ == "__main__":
         print("Worksheet not found.")
 
     df_raw = get_as_dataframe(worksheet, evaluate_formulas=True)
+
+    # Makes sure business keys have no hidden white spaces before merges
+    df_raw["kumon_id"] = (
+        df_raw["kumon_id"].astype(str).apply(lambda s: s.strip().upper())
+    )
+    df_raw["subject"] = df_raw["subject"].astype(str).apply(lambda s: s.strip().upper())
+
     df_students = migrate_dim_students(sh, df_raw)
     df_subjects = migrate_rel_students_subject(sh, df_raw, df_students)
     migrate_fct_status_report(sh, df_raw, df_students, df_subjects)
