@@ -29,7 +29,20 @@ def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.Da
         .drop_duplicates(subset="kumon_id")
         .copy()
     )
+    # Create student_id surrogate key
     df_students["student_id"] = [str(uuid.uuid4()) for _ in range(len(df_students))]
+
+    # Create status column that states whether a student is active considering the last report_date
+    last_date = df_raw["report_date"].max()
+    df_students["status"] = [
+        (
+            "active"
+            if (id == df_raw["kumon_id"].loc["report_date" == last_date]).any()
+            else "inactive"
+        )
+        for id in df_students["kumon_id"]
+    ]
+
     ingested_at = pd.Timestamp.now()
     df_students["ingested_at"] = [ingested_at for _ in range(len(df_students))]
     cols = [
@@ -39,6 +52,7 @@ def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.Da
         "birth_date",
         "enroll_date",
         "gender",
+        "status",
         "ingested_at",
     ]
     df_students = df_students[cols]
