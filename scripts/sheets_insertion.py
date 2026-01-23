@@ -25,23 +25,31 @@ def get_gspread_client(json_key_path: str) -> gspread.Client:
 
 def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.DataFrame:
     df_students = (
-        df_raw[["kumon_id", "name", "birth_date", "enroll_date", "gender"]]
-        .drop_duplicates(subset="kumon_id")
+        df_raw[
+            ["kumon_id", "name", "birth_date", "subject", "enroll_date_sub", "gender"]
+        ]
+        .drop_duplicates()
         .copy()
     )
     # Create student_id surrogate key
     df_students["student_id"] = [str(uuid.uuid4()) for _ in range(len(df_students))]
 
-    # Create status column that states whether a student is active considering the last report_date
-    last_date = df_raw["report_date"].max()
+    # Create status column that states whether a student is active in a subject considering the current report_date
+    current_date = df_raw["report_date"].max()
     df_students["status"] = [
         (
             "active"
-            if (id == df_raw["kumon_id"].loc[df_raw["report_date"] == last_date]).any()
+            if (
+                id == df_raw["kumon_id"].loc[df_raw["report_date"] == current_date]
+            ).any()
             else "inactive"
         )
         for id in df_students["kumon_id"]
     ]
+
+    # Create empty columns that will be filled for new students and will be dealt with in the silver layer for legacy
+    df_students["current_grade"] = None
+    df_students["current_stage"] = None
 
     # Metadata
     ingested_at = pd.Timestamp.now()
@@ -50,9 +58,12 @@ def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.Da
         "student_id",
         "kumon_id",
         "name",
-        "birth_date",
-        "enroll_date",
         "gender",
+        "birth_date",
+        "current_grade",
+        "current_stage",
+        "subject",
+        "enroll_date_sub",
         "status",
         "ingested_at",
     ]
@@ -82,77 +93,8 @@ def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.Da
     return df_students
 
 
-def migrate_rel_students_subject(
-    sh: gspread.Spreadsheet, df_raw: pd.DataFrame, df_students: pd.DataFrame
-) -> pd.DataFrame:
-    df_subjects = df_raw[["kumon_id", "subject", "enroll_date_sub"]]
-    df_subjects = df_subjects.merge(
-        df_students[["student_id", "kumon_id"]],
-        how="left",
-        on="kumon_id",
-        validate="many_to_one",
-    ).drop_duplicates()
-
-    # Create subject_id surrogate key
-    df_subjects["subject_id"] = [str(uuid.uuid4()) for _ in range(len(df_subjects))]
-
-    # Create status column that states whether a student is active in subject considering the last report_date
-    last_date = df_raw["report_date"].max()
-
-    # Select active students at last report_date
-    df_active = df_raw[df_raw["report_date"] == last_date][
-        ["kumon_id", "subject"]
-    ].drop_duplicates()
-    df_active["status"] = "active"
-
-    df_subjects = df_subjects.merge(df_active, how="left", on=["kumon_id", "subject"])
-    df_subjects["status"] = df_subjects["status"].fillna("inactive")
-
-    # Metadata
-    ingested_at = pd.Timestamp.now()
-    df_subjects["ingested_at"] = [ingested_at for _ in range(len(df_subjects))]
-
-    cols = [
-        "subject_id",
-        "student_id",
-        "subject",
-        "enroll_date_sub",
-        "status",
-        "ingested_at",
-    ]
-    df_subjects = df_subjects[cols]
-
-    try:
-        worksheet = sh.worksheet("rel_students_subject")
-        print("rel_students_subject worksheet opened.")
-    except gspread.exceptions.WorksheetNotFound:
-        worksheet = sh.add_worksheet(
-            title="rel_students_subject", rows="100", cols="20"
-        )
-
-    worksheet.clear()
-
-    print(f"Loading {len(df_subjects)} records in 'rel_students_subject'...")
-
-    set_with_dataframe(
-        worksheet=worksheet,
-        dataframe=df_subjects,
-        row=1,
-        col=1,
-        include_index=False,
-        include_column_header=True,
-        resize=True,
-    )
-
-    print("Data loaded sucessfully.")
-    return df_subjects
-
-
 def migrate_fct_status_report(
-    sh: gspread.Spreadsheet,
-    df_raw: pd.DataFrame,
-    df_students: pd.DataFrame,
-    df_subjects: pd.DataFrame,
+    sh: gspread.Spreadsheet, df_raw: pd.DataFrame, df_students: pd.DataFrame
 ):
     df_fact = df_raw[
         [
@@ -172,14 +114,9 @@ def migrate_fct_status_report(
         ]
     ]
     df_fact = df_fact.merge(
-        df_students[["student_id", "kumon_id"]],
+        df_students[["student_id", "kumon_id", "subject"]],
         how="left",
-        on="kumon_id",
-        validate="many_to_one",
-    ).merge(
-        df_subjects[["subject_id", "student_id", "subject"]],
-        how="left",
-        on=["student_id", "subject"],
+        on=["kumon_id", "subject"],
         validate="many_to_one",
     )
 
@@ -191,9 +128,9 @@ def migrate_fct_status_report(
     df_fact["ingested_at"] = [ingested_at for _ in range(len(df_fact))]
     cols = [
         "fact_id",
-        "subject_id",
         "student_id",
         "report_date",
+        "subject",
         "age_at_report",
         "type",
         "grade_id",
@@ -250,5 +187,4 @@ if __name__ == "__main__":
     df_raw["subject"] = df_raw["subject"].astype(str).apply(lambda s: s.strip().upper())
 
     df_students = migrate_dim_students(sh_destination, df_raw)
-    df_subjects = migrate_rel_students_subject(sh_destination, df_raw, df_students)
-    migrate_fct_status_report(sh_destination, df_raw, df_students, df_subjects)
+    migrate_fct_status_report(sh_destination, df_raw, df_students)
