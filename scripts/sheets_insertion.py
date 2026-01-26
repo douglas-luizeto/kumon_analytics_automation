@@ -15,8 +15,8 @@ SCOPES = [
 load_dotenv()
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 SOURCE_ID = os.getenv("SOURCE_ID")
-# DESTINATION_ID = os.getenv("DESTINATION_ID")
-DESTINATION_ID = os.getenv("TEST_ID")
+DESTINATION_ID = os.getenv("DESTINATION_ID")
+# DESTINATION_ID = os.getenv("TEST_ID")
 
 
 def get_gspread_client(json_key_path: str) -> gspread.Client:
