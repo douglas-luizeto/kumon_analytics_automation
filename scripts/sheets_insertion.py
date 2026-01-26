@@ -27,16 +27,13 @@ def get_gspread_client(json_key_path: str) -> gspread.Client:
 def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.DataFrame:
     df_students = (
         df_raw[
-            ["kumon_id", "name", "birth_date", "subject", "enroll_date_sub", "gender", "type", "status"]
+            ["kumon_id", "name", "birth_date", "subject", "enroll_date_sub", "gender", "type", "grade", "stage", "status"]
         ]
         .drop_duplicates(["kumon_id", "name", "birth_date", "subject", "enroll_date_sub", "gender"], keep='last')
         .copy()
-    )
+    ).rename(columns={"grade": "current_grade", "stage":"current_stage"})
     # Create student_id surrogate key
     df_students["student_id"] = [str(uuid.uuid4()) for _ in range(len(df_students))]
-
-    df_students["current_grade"] = None
-    df_students["current_stage"] = None
 
     # Metadata
     ingested_at = pd.Timestamp.now()
