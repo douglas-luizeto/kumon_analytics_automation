@@ -23,11 +23,11 @@ def get_gspread_client(json_key_path: str) -> gspread.Client:
     creds = Credentials.from_service_account_file(json_key_path, scopes=SCOPES)
     return gspread.authorize(creds)
 
-# We keep the last status in order to determine whether a student is currently active or not.
+# We keep the last status and type to determine the students current info.
 def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.DataFrame:
     df_students = (
         df_raw[
-            ["kumon_id", "name", "birth_date", "subject", "enroll_date_sub", "gender", "status"]
+            ["kumon_id", "name", "birth_date", "subject", "enroll_date_sub", "gender", "type", "status"]
         ]
         .drop_duplicates(["kumon_id", "name", "birth_date", "subject", "enroll_date_sub", "gender"], keep='last')
         .copy()
@@ -35,15 +35,6 @@ def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.Da
     # Create student_id surrogate key
     df_students["student_id"] = [str(uuid.uuid4()) for _ in range(len(df_students))]
 
-    # Modify status column to show only the options 'active' and 'inactive'
-    def is_active(row):
-        if row["status"] in ('new', 'new_multi', 'new_former', 'current'):
-            return 'active'
-        else:
-            return 'inactive'
-    
-    df_students["status"] = df_students.apply(is_active, axis=1)
-    
     df_students["current_grade"] = None
     df_students["current_stage"] = None
 
@@ -60,6 +51,7 @@ def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.Da
         "subject",
         "current_stage",
         "enroll_date_sub",
+        "type",
         "status",
         "ingested_at",
     ]
@@ -97,11 +89,8 @@ def migrate_fct_status_report(
             "kumon_id",
             "subject",
             "report_date",
-            "age_at_report",
             "type",
-            "grade_id",
             "grade",
-            "stage_id",
             "stage",
             "current_lesson",
             "total_sheets",
@@ -127,11 +116,8 @@ def migrate_fct_status_report(
         "student_id",
         "report_date",
         "subject",
-        "age_at_report",
         "type",
-        "grade_id",
         "grade",
-        "stage_id",
         "stage",
         "current_lesson",
         "total_sheets",
