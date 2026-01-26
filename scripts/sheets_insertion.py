@@ -15,39 +15,35 @@ SCOPES = [
 load_dotenv()
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 SOURCE_ID = os.getenv("SOURCE_ID")
-DESTINATION_ID = os.getenv("DESTINATION_ID")
+# DESTINATION_ID = os.getenv("DESTINATION_ID")
+DESTINATION_ID = os.getenv("TEST_ID")
 
 
 def get_gspread_client(json_key_path: str) -> gspread.Client:
     creds = Credentials.from_service_account_file(json_key_path, scopes=SCOPES)
     return gspread.authorize(creds)
 
-
+# We keep the last status in order to determine whether a student is currently active or not.
 def migrate_dim_students(sh: gspread.Spreadsheet, df_raw: pd.DataFrame) -> pd.DataFrame:
     df_students = (
         df_raw[
-            ["kumon_id", "name", "birth_date", "subject", "enroll_date_sub", "gender"]
+            ["kumon_id", "name", "birth_date", "subject", "enroll_date_sub", "gender", "status"]
         ]
-        .drop_duplicates()
+        .drop_duplicates(["kumon_id", "name", "birth_date", "subject", "enroll_date_sub", "gender"], keep='last')
         .copy()
     )
     # Create student_id surrogate key
     df_students["student_id"] = [str(uuid.uuid4()) for _ in range(len(df_students))]
 
-    # Create status column that states whether a student is active in a subject considering the current report_date
-    current_date = df_raw["report_date"].max()
-    df_students["status"] = [
-        (
-            "active"
-            if (
-                id == df_raw["kumon_id"].loc[df_raw["report_date"] == current_date]
-            ).any()
-            else "inactive"
-        )
-        for id in df_students["kumon_id"]
-    ]
-
-    # Create empty columns that will be filled for new students and will be dealt with in the silver layer for legacy
+    # Modify status column to show only the options 'active' and 'inactive'
+    def is_active(row):
+        if row["status"] in ('new', 'new_multi', 'new_former', 'current'):
+            return 'active'
+        else:
+            return 'inactive'
+    
+    df_students["status"] = df_students.apply(is_active, axis=1)
+    
     df_students["current_grade"] = None
     df_students["current_stage"] = None
 
