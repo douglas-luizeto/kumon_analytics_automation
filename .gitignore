@@ -1,5 +1,9 @@
 .env
-raw_data
-old_files
-authentication
-venv
+raw_data/
+old_files/
+authentication/
+venv/
+logs/
+transform/target/
+transform/dbt_packages/
+transform/logs/

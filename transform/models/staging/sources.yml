@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: kumon_raw
+    database: kumon-analytics-automation
+    schema: kumon_raw
+    tables:
+      - name: dim_students
+        description: "Student data"
+      - name: fct_status_report
+        description: "Monthly performance data"
