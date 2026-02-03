@@ -1,0 +1,17 @@
+services: 
+  kumon-app:
+    build:
+      context: ./streamlit/
+      dockerfile: Dockerfile
+    container_name: kumon_app
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/key.json
+      - APP_ENV=development
+    volumes:
+      - C:/Users/louza/Desktop/Projetos/kumon_analytics_automation/authentication/kumon-analytics-automation-a000f5ef7fa9.json:/tmp/key.json
+      - ./streamlit:/app
+    restart: always

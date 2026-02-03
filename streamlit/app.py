@@ -107,7 +107,7 @@ if 'df_students' not in st.session_state or 'df_fact' not in st.session_state or
         st.session_state.df_students = load_data_official("dim_students!A:Z")
         st.session_state.df_fact = load_data_official("fct_status_report!A:Z")
 
-st.sidebar.title("Navegação - Legal")
+st.sidebar.title("Navegação")
 page = st.sidebar.radio("",["Cadastro de Alunos", "Relatório de Performance"])
 
 # Page: Student Enroll
