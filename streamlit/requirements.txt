@@ -1,0 +1,5 @@
+google_api_python_client==2.188.0
+pandas==2.3.3
+protobuf==6.33.4
+python-dotenv==1.2.1
+streamlit==1.53.1

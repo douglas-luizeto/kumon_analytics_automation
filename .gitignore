@@ -3,7 +3,9 @@ raw_data/
 old_files/
 authentication/
 venv/
+streamlit/st_venv/
 logs/
 transform/target/
 transform/dbt_packages/
 transform/logs/
+scripts/
