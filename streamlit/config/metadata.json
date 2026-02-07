@@ -1,0 +1,76 @@
+{
+  "subjects": {
+    "Math": {
+      "stages": ["6A", "5A", "4A", "3A", "2A", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O"],
+      "thresholds": {
+        "F5": "6A",
+        "F4": "5A",
+        "F3": "4A",
+        "F2": "3A",
+        "F1": "2A",
+        "1EF": "A",
+        "2EF": "B",
+        "3EF": "C",
+        "4EF": "D",
+        "5EF": "E",
+        "6EF": "F",
+        "7EF": "G",
+        "8EF": "H",
+        "9EF": "I",
+        "1EM": "J",
+        "2EM": "K",
+        "3EM": "L"
+      }
+    },
+    "Portuguese": {
+      "stages": ["7A", "6A", "5A", "4A", "3A", "2A", "AI", "AII", "BI", "BII", "CI", "CII", "DI", "DII", "EI", "EII", "FI", "FII", "GI", "GII", "HI", "HII", "II", "III", "J", "K", "L"],
+      "thresholds": {
+        "F5": "6A",
+        "F4": "5A",
+        "F3": "4A",
+        "F2": "3A",
+        "F1": "2A",
+        "1EF": "AI",
+        "2EF": "BI",
+        "3EF": "CI",
+        "4EF": "DI",
+        "5EF": "EI",
+        "6EF": "FI",
+        "7EF": "GI",
+        "8EF": "HI",
+        "9EF": "II",
+        "1EM": "J",
+        "2EM": "K",
+        "3EM": "L"
+      }
+    },
+    "English": {
+      "stages": ["7A", "6A", "5A", "4A", "3A", "2A", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O"],
+      "thresholds": {
+        "F5": "6A",
+        "F4": "5A",
+        "F3": "4A",
+        "F2": "3A",
+        "F1": "2A",
+        "1EF": "A",
+        "2EF": "B",
+        "3EF": "C",
+        "4EF": "D",
+        "5EF": "E",
+        "6EF": "F",
+        "7EF": "G",
+        "8EF": "H",
+        "9EF": "I",
+        "1EM": "J",
+        "2EM": "K",
+        "3EM": "L"
+      }
+    },
+    "Japanese": {
+      "stages": ["4A", "3A", "2A", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"],
+      "thresholds":{}
+    }
+  },
+  "fct_status_list": ["current", "new", "new_multi", "new_former", "absent", "absent_graduate", "absent_transfer"],
+  "grades_order": ["F5", "F4", "F3", "F2", "F1", "1EF", "2EF", "3EF", "4EF", "5EF", "6EF", "7EF", "8EF", "9EF", "1EM", "2EM", "3EM", "AD", "EE"]
+}
