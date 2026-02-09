@@ -5,7 +5,7 @@ sources:
     database: kumon-analytics-automation
     schema: kumon_raw
     tables:
-      - name: dim_students
+      - name: students
         description: "Student data"
-      - name: fct_status_report
+      - name: status_report
         description: "Monthly performance data"

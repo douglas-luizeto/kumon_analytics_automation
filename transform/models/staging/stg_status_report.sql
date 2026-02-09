@@ -1,5 +1,5 @@
 WITH source as (
-    SELECT * FROM {{ source('kumon_raw', 'fct_status_report') }}
+    SELECT * FROM {{ source('kumon_raw', 'status_report') }}
 ),
 
 renamed as (
@@ -20,7 +20,6 @@ renamed as (
         , cast(total_sheets as integer) as worksheets_completed
 
         -- Student status
-        , cast(advanced as integer) as is_advanced
         , cast(status as string) as enrollment_status
 
         -- Metadata

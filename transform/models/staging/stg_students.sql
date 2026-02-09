@@ -1,5 +1,5 @@
 WITH source as (
-    SELECT * FROM {{ source('kumon_raw', 'dim_students') }}
+    SELECT * FROM {{ source('kumon_raw', 'students') }}
 ),
 
 renamed as (
@@ -18,11 +18,11 @@ renamed as (
         , cast(type as string) as study_type
         , cast(current_grade as string) as current_school_grade
         , cast(current_stage as string) as current_kumon_stage
-        , cast(enroll_date_sub as date) as enrollment_date
-        , cast(status as string) as enrollment_status
+        , cast(enroll_sub_date as date) as enrollment_date
+        , cast(status as string) as current_status
 
         -- Metadata
-        , cast(ingested_at as timestamp) as loaded_at
+        , cast(ingested_at as datetime) as loaded_at
     FROM source
 )
 
