@@ -4,6 +4,7 @@ old_files/
 authentication/
 venv/
 streamlit/st_venv/
+transform/dbt_venv/
 logs/
 transform/target/
 transform/dbt_packages/
